@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" role="img" aria-labelledby="title desc">
+  <title id="title">Open Ports</title>
+  <desc id="desc">Dispersal Wolves winter field banner</desc>
+  <rect width="1200" height="360" fill="#102F31"/>
+  <g fill="none" stroke="#315659" stroke-width="2" opacity=".7">
+    <path d="M-30 80C120 5 260 155 420 72S720 18 870 84s260 65 390-18"/>
+    <path d="M-40 125c175-82 315 55 470-2s292-92 460-20 250 50 360-4"/>
+    <path d="M-60 282c160-64 294 23 448-31s310-39 456 9 260 20 410-37"/>
+  </g>
+  <g transform="translate(72 59)" fill="none" stroke="#72B6A5" stroke-width="9" stroke-linecap="square" stroke-linejoin="miter">
+    <path d="M22 170 55 76l53 34 45-70 51 74 61-31 24 87-62 74-128-4z"/>
+    <path d="m108 110 18 47 47 4 31-47M126 157l-27 83m74-79 54 83"/>
+  </g>
+  <text x="410" y="160" fill="#F1F0E8" font-family="Arial, Helvetica, sans-serif" font-size="72" font-weight="700" letter-spacing="-2">Open Ports</text>
+  <text x="414" y="211" fill="#72B6A5" font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="700" letter-spacing="6">DISPERSAL WOLVES</text>
+  <path d="M414 247h640" stroke="#F1F0E8" stroke-width="2" opacity=".65"/>
+  <circle cx="1080" cy="247" r="7" fill="#72B6A5"/>
+</svg>

@@ -1,0 +1,16 @@
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.log
+*.tmp
+*.bak
+*.swp
+reports/
+captures/
+baselines/
+.env
+.env.*
+!.env.example
+target/
+*.dw
