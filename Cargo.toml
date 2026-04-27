@@ -1,0 +1,15 @@
+[package]
+name = "dispersal-open-ports"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+description = "Local listening-port inventory and baseline comparison"
+
+[[bin]]
+name = "open-ports"
+path = "src/main.rs"
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1
