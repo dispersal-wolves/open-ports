@@ -57,6 +57,13 @@ fn parse_ss(output: &str) -> Vec<Listener> {
         .collect()
 }
 
+// Windows translates netstat's state column, so a listening socket is also
+// recognized by its foreign address, which always has port 0.
+#[cfg_attr(not(windows), allow(dead_code))]
+fn is_windows_tcp_listener(foreign: &str, state: &str) -> bool {
+    state.eq_ignore_ascii_case("LISTENING") || foreign.ends_with(":0")
+}
+
 fn parse_netstat(output: &str) -> Vec<Listener> {
     output
         .lines()
@@ -71,13 +78,13 @@ fn parse_netstat(output: &str) -> Vec<Listener> {
             }
             if cfg!(windows) {
                 if protocol.starts_with("tcp") && fields.len() >= 5 {
-                    if !fields[3].eq_ignore_ascii_case("LISTENING") {
+                    if !is_windows_tcp_listener(fields[2], fields[3]) {
                         return None;
                     }
                     return Some(Listener {
                         protocol,
                         address: fields[1].to_owned(),
-                        state: fields[3].to_owned(),
+                        state: "LISTENING".to_owned(),
                         pid: fields[4].parse().ok(),
                         process: None,
                     });
@@ -389,6 +396,15 @@ mod tests {
             assert_eq!(rows.len(), 2);
             assert!(rows.iter().all(|row| row.pid != Some(43)));
         }
+    }
+
+    #[test]
+    fn windows_listener_detection_survives_localized_state() {
+        assert!(is_windows_tcp_listener("0.0.0.0:0", "LISTENING"));
+        assert!(is_windows_tcp_listener("0.0.0.0:0", "ABHÖREN"));
+        assert!(is_windows_tcp_listener("[::]:0", "ESCUCHANDO"));
+        assert!(!is_windows_tcp_listener("127.0.0.1:6000", "HERGESTELLT"));
+        assert!(!is_windows_tcp_listener("127.0.0.1:6000", "ESTABLISHED"));
     }
 
     #[test]
