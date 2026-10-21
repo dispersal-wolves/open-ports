@@ -280,10 +280,14 @@ fn option(args: &[String], name: &str) -> Option<String> {
         .cloned()
 }
 
+const USAGE: &str = "Usage:\n  open-ports scan [--format table|json]\n  open-ports baseline --output FILE\n  open-ports diff --baseline FILE [--format table|json]\n  open-ports --help";
+
 fn usage() {
-    eprintln!(
-        "Usage:\n  open-ports scan [--format table|json]\n  open-ports baseline --output FILE\n  open-ports diff --baseline FILE [--format table|json]"
-    );
+    eprintln!("{USAGE}");
+}
+
+fn wants_help(args: &[String]) -> bool {
+    args.iter().any(|value| value == "--help" || value == "-h")
 }
 
 fn run(args: &[String]) -> Result<u8, String> {
@@ -291,6 +295,10 @@ fn run(args: &[String]) -> Result<u8, String> {
         usage();
         return Ok(2);
     };
+    if wants_help(args) {
+        println!("{USAGE}");
+        return Ok(0);
+    }
     match command {
         "scan" => {
             let listeners = collect().map_err(|error| error.to_string())?;
@@ -424,6 +432,19 @@ mod tests {
         );
         assert_eq!(added, vec![listener("0.0.0.0:443", 10)]);
         assert_eq!(removed, vec![listener("0.0.0.0:80", 10)]);
+    }
+
+    #[test]
+    fn help_flag_is_recognized_after_a_command() {
+        let args = |values: &[&str]| values.iter().map(|v| v.to_string()).collect::<Vec<_>>();
+        assert!(wants_help(&args(&["--help"])));
+        assert!(wants_help(&args(&["scan", "-h"])));
+        assert!(!wants_help(&args(&["scan", "--format", "json"])));
+    }
+
+    #[test]
+    fn help_exits_successfully() {
+        assert_eq!(run(&["diff".to_string(), "--help".to_string()]), Ok(0));
     }
 
     #[test]
