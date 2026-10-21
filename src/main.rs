@@ -243,6 +243,36 @@ fn render_table(listeners: &[Listener]) -> String {
     output
 }
 
+// PIDs change whenever a service restarts, so they are not part of a listener's identity.
+fn identity(item: &Listener) -> (&str, &str, &str, Option<&str>) {
+    (
+        &item.protocol,
+        &item.address,
+        &item.state,
+        item.process.as_deref(),
+    )
+}
+
+fn diff_listeners(before: &[Listener], after: &[Listener]) -> (Vec<Listener>, Vec<Listener>) {
+    let before_keys: BTreeSet<_> = before.iter().map(identity).collect();
+    let after_keys: BTreeSet<_> = after.iter().map(identity).collect();
+    let mut added: Vec<_> = after
+        .iter()
+        .filter(|item| !before_keys.contains(&identity(item)))
+        .cloned()
+        .collect();
+    let mut removed: Vec<_> = before
+        .iter()
+        .filter(|item| !after_keys.contains(&identity(item)))
+        .cloned()
+        .collect();
+    added.sort();
+    added.dedup();
+    removed.sort();
+    removed.dedup();
+    (added, removed)
+}
+
 fn option(args: &[String], name: &str) -> Option<String> {
     args.iter()
         .position(|value| value == name)
@@ -290,10 +320,7 @@ fn run(args: &[String]) -> Result<u8, String> {
             let baseline =
                 load_baseline(Path::new(&baseline_path)).map_err(|error| error.to_string())?;
             let current = collect().map_err(|error| error.to_string())?;
-            let before: BTreeSet<_> = baseline.into_iter().collect();
-            let after: BTreeSet<_> = current.into_iter().collect();
-            let added: Vec<_> = after.difference(&before).cloned().collect();
-            let removed: Vec<_> = before.difference(&after).cloned().collect();
+            let (added, removed) = diff_listeners(&baseline, &current);
             let format = option(args, "--format").unwrap_or_else(|| "table".into());
             if format == "json" {
                 println!(
@@ -369,6 +396,34 @@ mod tests {
         save_baseline(&path, &listeners).unwrap();
         assert_eq!(load_baseline(&path).unwrap(), listeners);
         fs::remove_file(path).unwrap();
+    }
+
+    fn listener(address: &str, pid: u32) -> Listener {
+        Listener {
+            protocol: "tcp".into(),
+            address: address.into(),
+            state: "LISTEN".into(),
+            pid: Some(pid),
+            process: Some("server".into()),
+        }
+    }
+
+    #[test]
+    fn diff_ignores_pid_changes() {
+        let (added, removed) =
+            diff_listeners(&[listener("0.0.0.0:80", 10)], &[listener("0.0.0.0:80", 11)]);
+        assert!(added.is_empty());
+        assert!(removed.is_empty());
+    }
+
+    #[test]
+    fn diff_reports_new_and_closed_ports() {
+        let (added, removed) = diff_listeners(
+            &[listener("0.0.0.0:80", 10)],
+            &[listener("0.0.0.0:443", 10)],
+        );
+        assert_eq!(added, vec![listener("0.0.0.0:443", 10)]);
+        assert_eq!(removed, vec![listener("0.0.0.0:80", 10)]);
     }
 
     #[test]
